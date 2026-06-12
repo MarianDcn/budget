@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buget Produse</title>
+<style>
+  :root{
+    --bg:#1c1b1a;
+    --panel:#2a2826;
+    --accent:#e8854a;
+    --text:#f4f1ea;
+    --muted:#a8a39c;
+    --line:#3c3934;
+    --good:#7fae6f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding:20px;
+  }
+  h1{font-size:1.5rem;margin:0 0 4px;letter-spacing:.5px;}
+  .sub{color:var(--muted);font-size:.85rem;margin-bottom:20px;}
+  .layout{display:grid;grid-template-columns:1fr;gap:18px;max-width:920px;margin:0 auto;}
+  @media(min-width:780px){.layout{grid-template-columns:330px 1fr;}}
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px;
+  }
+  .panel h2{margin:0 0 12px;font-size:1.05rem;color:var(--accent);}
+  label{display:block;font-size:.78rem;color:var(--muted);margin:10px 0 4px;}
+  input,select{
+    width:100%;
+    padding:9px 10px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:6px;
+    color:var(--text);
+    font-size:.95rem;
+  }
+  input:focus,select:focus{outline:1px solid var(--accent);}
+  button{
+    margin-top:14px;
+    width:100%;
+    padding:10px;
+    background:var(--accent);
+    color:#1c1b1a;
+    border:none;
+    border-radius:6px;
+    font-weight:600;
+    cursor:pointer;
+    font-size:.92rem;
+  }
+  button:hover{opacity:.9;}
+  button.secondary{background:var(--bg);color:var(--text);border:1px solid var(--line);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .product-select-wrap{display:flex;gap:8px;}
+  .product-select-wrap select{flex:1;}
+  .icon-btn{
+    width:40px;flex:none;margin-top:0;
+    background:var(--bg);border:1px solid var(--line);color:var(--accent);
+    font-size:1.1rem;border-radius:6px;cursor:pointer;
+  }
+  .icon-btn:hover{border-color:var(--accent);}
+
+  .product-card{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px;
+    margin-bottom:14px;
+  }
+  .product-card .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .product-card .name{font-size:1.05rem;font-weight:700;}
+  .product-card .pct{font-size:.85rem;color:var(--muted);}
+  .progress{
+    height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:10px 0 8px;
+  }
+  .progress-fill{height:100%;background:var(--accent);transition:width .3s;}
+  .progress-fill.complete{background:var(--good);}
+  .product-stats{display:flex;gap:14px;font-size:.85rem;color:var(--muted);flex-wrap:wrap;}
+  .product-stats b{color:var(--text);}
+
+  .summary{display:flex;gap:14px;margin-bottom:16px;flex-wrap:wrap;}
+  .summary div{
+    flex:1;min-width:110px;
+    background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;
+  }
+  .summary .label{font-size:.72rem;color:var(--muted);}
+  .summary .val{font-size:1.25rem;font-weight:700;margin-top:4px;}
+  .good{color:var(--good);}
+  .bad{color:var(--accent);}
+
+  table{width:100%;border-collapse:collapse;font-size:.88rem;}
+  th,td{padding:8px 5px;border-bottom:1px solid var(--line);text-align:left;}
+  th{color:var(--muted);font-weight:500;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;}
+  td.amount{font-weight:600;}
+  .income{color:var(--good);}
+  .expense{color:var(--accent);}
+  .del{cursor:pointer;color:var(--muted);background:none;border:none;font-size:.95rem;padding:2px 4px;width:auto;margin:0;}
+  .del:hover{color:var(--accent);}
+  .edit-btn{cursor:pointer;color:var(--muted);background:none;border:none;font-size:.95rem;padding:2px 4px;width:auto;margin:0;}
+  .edit-btn:hover{color:var(--accent);}
+  .empty{color:var(--muted);font-size:.85rem;padding:18px 0;text-align:center;}
+
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+    align-items:center;justify-content:center;z-index:50;padding:16px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:18px;width:100%;max-width:380px;
+  }
+  .modal h3{margin:0 0 12px;color:var(--accent);font-size:1rem;}
+  .modal-actions{display:flex;gap:10px;margin-top:14px;}
+  .modal-actions button{margin-top:0;}
+
+  small.help{color:var(--muted);font-size:.72rem;display:block;margin-top:4px;}
+</style>
+</head>
+<body>
+
+<h1>Buget Produse</h1>
+<div class="sub">Urmărește cât ai economisit pentru fiecare produs, cu sursa și valuta.</div>
+
+<div class="layout">
+  <div class="panel">
+    <h2>Produs</h2>
+
+    <label>Selectează / produs existent</label>
+    <div class="product-select-wrap">
+      <select id="produsSelect" onchange="onProdusSelectChange()"></select>
+      <button class="icon-btn" onclick="stergeProdus()" title="Șterge produsul selectat">✕</button>
+    </div>
+
+    <label>Sau produs nou</label>
+    <input id="produsNou" placeholder="ex: Telefon nou">
+
+    <label>Goal (sumă țintă, RON)</label>
+    <input id="goal" type="number" step="0.01" placeholder="ex: 3000">
+
+    <h2 style="margin-top:20px;">Adaugă sumă</h2>
+
+    <label>Tip</label>
+    <select id="tip">
+      <option value="income">Sumă acumulată (+)</option>
+      <option value="expense">Cheltuială / scădere (-)</option>
+    </select>
+
+    <div class="row2">
+      <div>
+        <label>Sumă</label>
+        <input id="suma" type="number" step="0.01" placeholder="0.00">
+      </div>
+      <div>
+        <label>Valută</label>
+        <select id="valuta">
+          <option value="RON">RON</option>
+          <option value="EUR">EUR</option>
+          <option value="USD">USD</option>
+        </select>
+      </div>
+    </div>
+    <small class="help">Suma e convertită și salvată în RON, la cursul setat mai jos.</small>
+
+    <label>Sursă</label>
+    <input id="sursa" placeholder="ex: salariu, cadou, economii">
+
+    <button onclick="adaugaInregistrare()">Adaugă</button>
+
+    <h2 style="margin-top:20px;">Curs valutar (→ RON)</h2>
+    <div class="row2">
+      <div>
+        <label>1 EUR =</label>
+        <input id="cursEUR" type="number" step="0.0001" value="5.07" onchange="salveazaCurs()">
+      </div>
+      <div>
+        <label>1 USD =</label>
+        <input id="cursUSD" type="number" step="0.0001" value="4.65" onchange="salveazaCurs()">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2 id="produsActivTitlu">Produs</h2>
+    <div id="cardProdus"></div>
+
+    <h2 style="margin-top:18px;">Istoric (toate produsele)</h2>
+    <div class="summary">
+      <div>
+        <div class="label">Total acumulat (RON)</div>
+        <div class="val good" id="totalIncome">0.00</div>
+      </div>
+      <div>
+        <div class="label">Total cheltuieli (RON)</div>
+        <div class="val bad" id="totalExpense">0.00</div>
+      </div>
+      <div>
+        <div class="label">Sold total (RON)</div>
+        <div class="val" id="totalNet">0.00</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Produs</th><th>Sursă</th><th>Sumă (RON)</th><th></th></tr>
+      </thead>
+      <tbody id="lista"></tbody>
+    </table>
+    <div class="empty" id="emptyMsg" style="display:none;">Nu există încă înregistrări.</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Editează sumă</h3>
+    <label>Sumă (RON)</label>
+    <input id="editSuma" type="number" step="0.01">
+    <label>Sursă</label>
+    <input id="editSursa">
+    <label>Tip</label>
+    <select id="editTip">
+      <option value="income">Sumă acumulată (+)</option>
+      <option value="expense">Cheltuială / scădere (-)</option>
+    </select>
+    <div class="modal-actions">
+      <button class="secondary" onclick="inchideModal()">Anulează</button>
+      <button onclick="salveazaEdit()">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'buget_produse_v2';
+const CURS_KEY = 'buget_curs_valutar';
+
+let stare = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || {
+  produse: [],
+  intrari: []
+};
+
+let curs = JSON.parse(localStorage.getItem(CURS_KEY) || 'null') || { EUR: 5.07, USD: 4.65 };
+document.getElementById('cursEUR').value = curs.EUR;
+document.getElementById('cursUSD').value = curs.USD;
+
+let produsActivId = stare.produse.length ? stare.produse[0].id : null;
+let editId = null;
+
+function salveaza(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(stare));
+}
+function salveazaCurs(){
+  curs.EUR = parseFloat(document.getElementById('cursEUR').value) || curs.EUR;
+  curs.USD = parseFloat(document.getElementById('cursUSD').value) || curs.USD;
+  localStorage.setItem(CURS_KEY, JSON.stringify(curs));
+}
+function uid(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+
+function popPopuleazaSelect(){
+  const sel = document.getElementById('produsSelect');
+  sel.innerHTML = '<option value="">— niciun produs selectat —</option>';
+  stare.produse.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.nume;
+    if(p.id === produsActivId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function onProdusSelectChange(){
+  const sel = document.getElementById('produsSelect');
+  produsActivId = sel.value || null;
+  document.getElementById('produsNou').value = '';
+  if(produsActivId){
+    const p = stare.produse.find(x => x.id === produsActivId);
+    document.getElementById('goal').value = p && p.goal ? p.goal : '';
+  } else {
+    document.getElementById('goal').value = '';
+  }
+  randeaza();
+}
+
+function stergeProdus(){
+  if(!produsActivId) { alert('Selectează un produs din listă.'); return; }
+  const p = stare.produse.find(x => x.id === produsActivId);
+  if(!confirm(`Ștergi produsul "${p.nume}" și toate intrările lui?`)) return;
+
+  stare.intrari = stare.intrari.filter(i => i.produsId !== produsActivId);
+  stare.produse = stare.produse.filter(x => x.id !== produsActivId);
+  produsActivId = stare.produse.length ? stare.produse[0].id : null;
+  salveaza();
+  popPopuleazaSelect();
+  randeaza();
+}
+
+function getOrCreateProdus(){
+  const numeNou = document.getElementById('produsNou').value.trim();
+  const goalVal = parseFloat(document.getElementById('goal').value) || 0;
+
+  if(numeNou){
+    let existent = stare.produse.find(p => p.nume.toLowerCase() === numeNou.toLowerCase());
+    if(existent){
+      if(goalVal) existent.goal = goalVal;
+      salveaza();
+      return existent.id;
+    }
+    const id = uid();
+    stare.produse.push({id, nume: numeNou, goal: goalVal});
+    salveaza();
+    return id;
+  }
+
+  if(produsActivId){
+    const p = stare.produse.find(x => x.id === produsActivId);
+    if(p && goalVal) { p.goal = goalVal; salveaza(); }
+    return produsActivId;
+  }
+
+  return null;
+}
+
+function convertLaRON(suma, valuta){
+  if(valuta === 'EUR') return suma * curs.EUR;
+  if(valuta === 'USD') return suma * curs.USD;
+  return suma;
+}
+
+function adaugaInregistrare(){
+  salveazaCurs();
+  const produsId = getOrCreateProdus();
+  if(!produsId){
+    alert('Completează numele produsului sau selectează unul existent.');
+    return;
+  }
+
+  const tip = document.getElementById('tip').value;
+  const sumaInput = parseFloat(document.getElementById('suma').value);
+  const valuta = document.getElementById('valuta').value;
+  const sursa = document.getElementById('sursa').value.trim();
+
+  if(isNaN(sumaInput) || sumaInput <= 0){
+    alert('Introdu o sumă validă.');
+    return;
+  }
+
+  const sumaRON = convertLaRON(sumaInput, valuta);
+
+  stare.intrari.push({
+    id: uid(),
+    produsId,
+    tip,
+    sumaRON,
+    sursa: sursa || '—'
+  });
+  salveaza();
+
+  produsActivId = produsId;
+  document.getElementById('produsNou').value = '';
+  document.getElementById('suma').value = '';
+  document.getElementById('sursa').value = '';
+
+  popPopuleazaSelect();
+  randeaza();
+}
+
+function stergeInregistrare(id){
+  stare.intrari = stare.intrari.filter(i => i.id !== id);
+  salveaza();
+  randeaza();
+}
+
+function deschideEdit(id){
+  editId = id;
+  const item = stare.intrari.find(i => i.id === id);
+  document.getElementById('editSuma').value = item.sumaRON.toFixed(2);
+  document.getElementById('editSursa').value = item.sursa;
+  document.getElementById('editTip').value = item.tip;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function inchideModal(){
+  editId = null;
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+function salveazaEdit(){
+  const item = stare.intrari.find(i => i.id === editId);
+  const suma = parseFloat(document.getElementById('editSuma').value);
+  if(isNaN(suma) || suma <= 0){ alert('Sumă invalidă.'); return; }
+  item.sumaRON = suma;
+  item.sursa = document.getElementById('editSursa').value.trim() || '—';
+  item.tip = document.getElementById('editTip').value;
+  salveaza();
+  inchideModal();
+  randeaza();
+}
+
+function calcProdus(produsId){
+  const intrari = stare.intrari.filter(i => i.produsId === produsId);
+  let acumulat = 0;
+  intrari.forEach(i => {
+    acumulat += (i.tip === 'income' ? i.sumaRON : -i.sumaRON);
+  });
+  return acumulat;
+}
+
+function randeazaCardProdus(){
+  const cont = document.getElementById('cardProdus');
+  const titlu = document.getElementById('produsActivTitlu');
+
+  if(!produsActivId || !stare.produse.find(p => p.id === produsActivId)){
+    titlu.textContent = 'Produs';
+    cont.innerHTML = '<div class="empty">Selectează sau adaugă un produs.</div>';
+    return;
+  }
+
+  const p = stare.produse.find(x => x.id === produsActivId);
+  const acumulat = calcProdus(produsActivId);
+  const goal = p.goal || 0;
+  const pct = goal > 0 ? Math.min(100, Math.max(0, (acumulat / goal) * 100)) : 0;
+  const complete = goal > 0 && acumulat >= goal;
+
+  titlu.textContent = p.nume;
+  cont.innerHTML = `
+    <div class="product-card">
+      <div class="top">
+        <div class="name">${p.nume}</div>
+        <div class="pct">${goal > 0 ? pct.toFixed(0) + '%' : 'fără goal'}</div>
+      </div>
+      ${goal > 0 ? `<div class="progress"><div class="progress-fill ${complete ? 'complete':''}" style="width:${pct}%"></div></div>` : ''}
+      <div class="product-stats">
+        <span>Acumulat: <b class="${acumulat >= 0 ? 'good':'bad'}">${acumulat.toFixed(2)} RON</b></span>
+        ${goal > 0 ? `<span>Goal: <b>${goal.toFixed(2)} RON</b></span>` : ''}
+        ${goal > 0 ? `<span>Rest: <b>${Math.max(0, goal - acumulat).toFixed(2)} RON</b></span>` : ''}
+        ${complete ? `<span class="good"><b>✓ Atins!</b></span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function randeaza(){
+  popPopuleazaSelect();
+  randeazaCardProdus();
+
+  const tbody = document.getElementById('lista');
+  tbody.innerHTML = '';
+  document.getElementById('emptyMsg').style.display = stare.intrari.length ? 'none' : 'block';
+
+  let totalIn = 0, totalEx = 0;
+
+  const intrariSortate = [...stare.intrari].slice().reverse();
+
+  intrariSortate.forEach(item => {
+    if(item.tip === 'income') totalIn += item.sumaRON;
+    else totalEx += item.sumaRON;
+
+    const p = stare.produse.find(x => x.id === item.produsId);
+    const numeProdus = p ? p.nume : '(șters)';
+    const semn = item.tip === 'income' ? '+' : '-';
+    const clasa = item.tip === 'income' ? 'income' : 'expense';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${numeProdus}</td>
+      <td>${item.sursa}</td>
+      <td class="amount ${clasa}">${semn}${item.sumaRON.toFixed(2)}</td>
+      <td style="white-space:nowrap;">
+        <button class="edit-btn" onclick="deschideEdit('${item.id}')" title="Editează">✎</button>
+        <button class="del" onclick="stergeInregistrare('${item.id}')" title="Șterge">✕</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('totalIncome').textContent = totalIn.toFixed(2);
+  document.getElementById('totalExpense').textContent = totalEx.toFixed(2);
+
+  const net = totalIn - totalEx;
+  const netEl = document.getElementById('totalNet');
+  netEl.textContent = net.toFixed(2);
+  netEl.className = 'val ' + (net >= 0 ? 'good' : 'bad');
+}
+
+randeaza();
+</script>
+
+</body>
+</html>
